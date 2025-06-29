@@ -1,3 +1,8 @@
 body {
   background-color: cornsilk;
 }
+
+ul {
+  list-style: none;
+  /* background-color: lightgray; */
+}
