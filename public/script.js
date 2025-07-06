@@ -1,8 +1,12 @@
-const itemList = document.querySelector('ul');
+const userSelect = document.getElementById('users');
+const taskList = document.getElementById('tasks');
 
-getItems().then(showItems);
+getUsers().then(fillUserSelect);
 
-itemList.onchange = handleCheck;
+const userId = userSelect.selectedOptions[0].value
+getTasks(userId).then(showItems);
+
+taskList.onchange = handleCheck;
 
 function handleCheck(e) {
   if (e.target.name !== 'done') return;
@@ -15,6 +19,12 @@ function handleCheck(e) {
   updateStatus(id, done).then(showItems);
 }
 
+function fillUserSelect(users) {
+  for (const {id, name} of users) {
+    userSelect.append(new Option(name, id))
+  }
+}
+
 function updateStatus(id, done) {
   return fetch(`/api/task`, {
     method: 'PATCH',
@@ -23,13 +33,19 @@ function updateStatus(id, done) {
   }).then(response => response.json());
 }
 
-function getItems() {
+function getUsers() {
+  return fetch('/api/users')
+    .then(response => response.json());
+}
+
+function getTasks(id) {
+
   return fetch('/api/items')
     .then(response => response.json());
 }
 
 function showItems(items) {
-  itemList.replaceChildren(...items.map(buildItem));
+  taskList.replaceChildren(...items.map(buildItem));
 }
 
 function buildItem(item) {
