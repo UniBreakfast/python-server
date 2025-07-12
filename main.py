@@ -28,19 +28,18 @@ class CustomHandler(http.server.BaseHTTPRequestHandler):
         path = self.path[1:] if self.path != "/" else "index.html"
 
         if path.startswith('api/'):
-            endpoint = path.split('/')[1]
+            endpoint = path.split('/')
+            print(endpoint)
 
             self.send_response(200)
             self.send_header("Content-type", "application/json")
             self.end_headers()
 
-            import pdb
-            pdb.set_trace()
-            match endpoint:
+            match endpoint[1]:
                 case 'users': 
                     payload = self.get_users()
                 case 'tasks':
-                    payload = self.get_tasks()
+                    payload = self.get_tasks(int(endpoint[2]))
 
             return self.wfile.write(json.dumps(payload).encode())
         
@@ -72,8 +71,8 @@ class CustomHandler(http.server.BaseHTTPRequestHandler):
         return [{k: v for k, v in user.__dict__.items() if k != 'tasks'} for user in users]
             
 
-    def get_tasks(self):
-        return self.wfile.write(json.dumps(tasks).encode())
+    def get_tasks(self, user_id):
+        return users[user_id].tasks
 
     def do_PATCH(self):
         if not self.path.startswith('/api/'):
