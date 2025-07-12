@@ -4,6 +4,7 @@ const taskList = document.getElementById('tasks');
 getUsers().then(fillUserSelect);
 
 const userId = userSelect.selectedOptions[0].value
+
 getTasks(userId).then(showItems);
 
 taskList.onchange = handleCheck;
@@ -40,7 +41,7 @@ function getUsers() {
 
 function getTasks(id) {
 
-  return fetch('/api/items')
+  return fetch('/api/tasks/${id}')
     .then(response => response.json());
 }
 
