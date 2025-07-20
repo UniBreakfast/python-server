@@ -7,6 +7,13 @@ class Task:
         self.id = id
         self.text = text
         self.done = done
+        
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'text': self.text,
+            'done': self.done
+        }
 
 class User:
     id: int

@@ -1,36 +1,44 @@
 const userSelect = document.getElementById('users');
 const taskList = document.getElementById('tasks');
 
-getUsers().then(fillUserSelect);
+const users = await getUsers();
+const userId = users[0].id;
+const tasks = await getTasks(userId);
 
-const userId = userSelect.selectedOptions[0].value
+fillUserSelect(users);
+showItems(tasks);
 
-getTasks(userId).then(showItems);
-
+userSelect.onchange = handleSelect;
 taskList.onchange = handleCheck;
+
+function handleSelect(e) {
+  const id = Number(e.target.value);
+  getTasks(id).then(showItems);
+}
 
 function handleCheck(e) {
   if (e.target.name !== 'done') return;
-  
+
   const box = e.target;
   const li = box.closest('li');
-  const id = Number(li.dataset.id);
+  const userId = Number(userSelect.value);
+  const taskId = Number(li.dataset.id);
   const done = e.target.checked;
 
-  updateStatus(id, done).then(showItems);
+  updateStatus(userId, taskId, done).then(showItems);
 }
 
 function fillUserSelect(users) {
-  for (const {id, name} of users) {
+  for (const { id, name } of users) {
     userSelect.append(new Option(name, id))
   }
 }
 
-function updateStatus(id, done) {
+function updateStatus(userId, taskId, done) {
   return fetch(`/api/task`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, done })
+    body: JSON.stringify({ userId, taskId, done })
   }).then(response => response.json());
 }
 
@@ -41,7 +49,7 @@ function getUsers() {
 
 function getTasks(id) {
 
-  return fetch('/api/tasks/${id}')
+  return fetch(`/api/tasks/${id}`)
     .then(response => response.json());
 }
 
@@ -55,7 +63,7 @@ function buildItem(item) {
   const box = document.createElement('input');
   const btn = document.createElement('button');
 
-  label.append(box, ' ', item.task);
+  label.append(box, ' ', item.text);
   box.type = 'checkbox';
   box.name = 'done';
   box.checked = item.done;

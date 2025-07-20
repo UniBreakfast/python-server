@@ -3,7 +3,7 @@ import socketserver
 import os
 import json
 
-from user import User
+from user import User, Task
 
 PORT = 8080
 
@@ -41,7 +41,7 @@ class CustomHandler(http.server.BaseHTTPRequestHandler):
                 case 'tasks':
                     payload = self.get_tasks(int(endpoint[2]))
 
-            return self.wfile.write(json.dumps(payload).encode())
+            return self.wfile.write(json.dumps(payload, default=Task.to_dict).encode())
         
         else:
             file_path = os.path.join(root_directory, path)
@@ -67,13 +67,6 @@ class CustomHandler(http.server.BaseHTTPRequestHandler):
             else:
                 self.send_error(404, "File Not Found: %s" % self.path)
 
-    def get_users(self):
-        return [{k: v for k, v in user.__dict__.items() if k != 'tasks'} for user in users]
-            
-
-    def get_tasks(self, user_id):
-        return users[user_id].tasks
-
     def do_PATCH(self):
         if not self.path.startswith('/api/'):
             self.send_error(404, "Not Found")
@@ -83,23 +76,29 @@ class CustomHandler(http.server.BaseHTTPRequestHandler):
         payload = self.get_payload()
         data = json.loads(payload)
         
-        id = data.get('id', None)
+        userId = data.get('userId', None)
+        taskId = data.get('taskId', None)
         done = data.get('done', None)
         
-        if id is None or done is None:
+        if any([userId is None, taskId is None, done is None]):
             self.send_error(400, "Bad Request")
             return
         
-        for item in tasks:
-            if item['id'] == id:
-                item['done'] = done
-                break
+        user = users[userId]
+        task = next((task for task in user.tasks if task.id == taskId), None)
+        task.done = done
                         
         self.send_response(200)
         self.send_header("Content-type", "application/json")
         self.end_headers()
 
-        self.wfile.write(json.dumps(tasks).encode())
+        self.wfile.write(json.dumps(user.tasks, default=Task.to_dict).encode())
+
+    def get_users(self):
+        return [{k: v for k, v in user.__dict__.items() if k != 'tasks'} for user in users]
+
+    def get_tasks(self, user_id):
+        return users[user_id].tasks
 
     def get_payload(self):
         return self.rfile.read(int(self.headers['Content-Length'])).decode('utf-8')
