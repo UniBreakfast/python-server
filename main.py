@@ -72,7 +72,6 @@ class CustomHandler(http.server.BaseHTTPRequestHandler):
             self.send_error(404, "Not Found")
             return
         
-        # path = self.path[5:]
         payload = self.get_payload()
         data = json.loads(payload)
         
@@ -88,6 +87,30 @@ class CustomHandler(http.server.BaseHTTPRequestHandler):
         task = next((task for task in user.tasks if task.id == taskId), None)
         task.done = done
                         
+        self.send_response(200)
+        self.send_header("Content-type", "application/json")
+        self.end_headers()
+
+        self.wfile.write(json.dumps(user.tasks, default=Task.to_dict).encode())
+
+    def do_DELETE(self):
+        if not self.path.startswith('/api/'):
+            self.send_error(404, "Not Found")
+            return
+        
+        payload = self.get_payload()
+        data = json.loads(payload)
+        
+        userId = data.get('userId', None)
+        taskId = data.get('taskId', None)
+        
+        if any([userId is None, taskId is None]):
+            self.send_error(400, "Bad Request")
+            return
+        
+        user = users[userId]
+        user.tasks = [task for task in user.tasks if task.id != taskId]
+
         self.send_response(200)
         self.send_header("Content-type", "application/json")
         self.end_headers()

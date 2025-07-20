@@ -6,14 +6,15 @@ const userId = users[0].id;
 const tasks = await getTasks(userId);
 
 fillUserSelect(users);
-showItems(tasks);
+showTasks(tasks);
 
 userSelect.onchange = handleSelect;
 taskList.onchange = handleCheck;
+taskList.onclick = handleDelete;
 
 function handleSelect(e) {
   const id = Number(e.target.value);
-  getTasks(id).then(showItems);
+  getTasks(id).then(showTasks);
 }
 
 function handleCheck(e) {
@@ -25,7 +26,17 @@ function handleCheck(e) {
   const taskId = Number(li.dataset.id);
   const done = e.target.checked;
 
-  updateStatus(userId, taskId, done).then(showItems);
+  updateStatus(userId, taskId, done).then(showTasks);
+}
+
+function handleDelete(e) {
+  if (e.target.tagName !== 'BUTTON') return;
+
+  const li = e.target.closest('li');
+  const userId = Number(userSelect.value);
+  const taskId = Number(li.dataset.id);
+
+  deleteTask(userId, taskId).then(showTasks);
 }
 
 function fillUserSelect(users) {
@@ -47,29 +58,36 @@ function getUsers() {
     .then(response => response.json());
 }
 
-function getTasks(id) {
-
-  return fetch(`/api/tasks/${id}`)
+function getTasks(userId) {
+  return fetch(`/api/tasks/${userId}`)
     .then(response => response.json());
 }
 
-function showItems(items) {
-  taskList.replaceChildren(...items.map(buildItem));
+function deleteTask(userId, taskId) {
+  return fetch(`/api/task`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, taskId })
+  }).then(response => response.json());
 }
 
-function buildItem(item) {
+function showTasks(tasks) {
+  taskList.replaceChildren(...tasks.map(buildTask));
+}
+
+function buildTask(task) {
   const li = document.createElement('li');
   const label = document.createElement('label');
   const box = document.createElement('input');
   const btn = document.createElement('button');
 
-  label.append(box, ' ', item.text);
+  label.append(box, ' ', task.text);
   box.type = 'checkbox';
   box.name = 'done';
-  box.checked = item.done;
+  box.checked = task.done;
   btn.textContent = 'Delete';
 
-  li.dataset.id = item.id;
+  li.dataset.id = task.id;
   li.append(label, ' ', btn);
 
   return li;
